@@ -99,7 +99,7 @@ def get_all_jobs():
                     "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "company": "Capgemini",
                     "host_url": url,
-                    "category" : category
+                    # "category" : category
                 }
                 jobs.append(job_entry)
                 # Capgemini_jobs["Job Title"].append(title)
