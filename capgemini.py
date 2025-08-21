@@ -8,13 +8,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
+import datetime
+from datetime import datetime
 
 # URL to scrape
-url = "https://www.capgemini.com/pt-en/careers/join-capgemini/job-search/?country_code=pt-en&country_name=Portugal&size=15"
+url = "https://www.capgemini.com/careers/join-capgemini/job-search/?size=15"
 
 # Output file
-CSV_FILE = 'capgemini_job_openings.csv'
-
+CSV_FILE = f'capgemini_opening{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.csv'
 # Set up Chrome options
 options = webdriver.ChromeOptions()
 options.add_argument('--no-sandbox')
@@ -24,14 +25,8 @@ options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option('useAutomationExtension', False)
 
 # Data storage
-Capgemini_jobs = {
-    "Job Title": [],
-    "Location": [],
-    "Category": [],
-    "URL": [],
-    "Date Posted": [],
-    "Contract Type": []
-}
+# Capgemin
+jobs = []
 
 def accept_cookies(driver):
     try:
@@ -71,27 +66,48 @@ def get_all_jobs():
         print(f"🔍 Found total {len(jobs_url)} jobs")
 
         for job in jobs_url:
+            time.sleep(2)
             driver.execute_script("window.open(arguments[0]);", job)
             driver.switch_to.window(driver.window_handles[-1])
+
+            time.sleep(5)
             try:
-                title = driver.find_element(By.XPATH, "//h1[contains(@class,'box-title')]").text.strip()
+                time.sleep(2)
+                title_element = wait.until(EC.visibility_of_element_located((By.XPATH, "//h1[contains(@class,'box-title')]")))
+                title = title_element.text.strip()
 
                 # Extract the details by label text
                 date_posted = driver.find_element(By.XPATH, "//span[text()='Posted on']/following-sibling::span").text.strip()
                 category = driver.find_element(By.XPATH, "//span[text()='Experience level']/following-sibling::span").text.strip()
                 contract_type = driver.find_element(By.XPATH, "//span[text()='Contract type']/following-sibling::span").text.strip()
                 location = driver.find_element(By.XPATH, "//span[text()='Location']/following-sibling::span").text.strip()
+                description = driver.find_element(By.XPATH,"//section[@class='section section--job-info']").text.strip()
 
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
+                time.sleep(5)
 
                 # Append data
-                Capgemini_jobs["Job Title"].append(title)
-                Capgemini_jobs["Location"].append(location)
-                Capgemini_jobs["Category"].append(category)
-                Capgemini_jobs["Contract Type"].append(contract_type)
-                Capgemini_jobs["URL"].append(job)
-                Capgemini_jobs["Date Posted"].append(date_posted)
+                job_entry = {
+                    "ob_title": title,
+                    "date_posted": date_posted,
+                    "description": description,
+                    "employment_type":  contract_type,
+                    "hiring_organization": "Capgemini",
+                    "job_location": location,
+                    "job_url": job,
+                    "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "company": "Capgemini",
+                    "host_url": url,
+                    "category" : category
+                }
+                jobs.append(job_entry)
+                # Capgemini_jobs["Job Title"].append(title)
+                # Capgemini_jobs["Location"].append(location)
+                # Capgemini_jobs["Category"].append(category)
+                # Capgemini_jobs["Contract Type"].append(contract_type)
+                # Capgemini_jobs["URL"].append(job)
+                # Capgemini_jobs["Date Posted"].append(date_posted)
 
             except Exception as e:
                 print(f"❌ Error parsing job: {e}")
@@ -107,5 +123,5 @@ def get_all_jobs():
 
 if __name__ == "__main__":
     get_all_jobs()
-    pd.DataFrame(Capgemini_jobs).to_csv(CSV_FILE, index=False, encoding='utf-8')
+    pd.DataFrame(jobs).to_csv(CSV_FILE, index=False, encoding='utf-8')
     print(f"✅ Data saved to {CSV_FILE}")
